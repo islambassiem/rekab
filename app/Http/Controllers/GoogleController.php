@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -14,30 +15,27 @@ class GoogleController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function googleCallBack(): RedirectResponse
+    public function googleCallBack(): View
     {
-        /** @var User $googleUser */
+        /** @var \Laravel\Socialite\Two\User $googleUser */
         $googleUser = Socialite::driver('google')->user();
 
         /** @var User|null $user */
         $user = User::query()->where('email', $googleUser->email)->first();
 
         if (! $user) {
-            return redirect()
-                ->route('login')
-                ->with('error', 'Please use your official email not your personal email');
+            return view('rekab.login')->with('error', 'Please use your official email not your personal email');
         }
         Auth::login($user);
+        $payment = $user->activePayment();
 
-        return redirect()
-            ->route('google-callback')
-            ->with([
-                'isPaid' => $user->activePayment() !== null,
-                'passengerName' => $user->name,
-                'serviceName' => $user->activePayment()?->service_name,
-                'validFrom' => $user->activePayment()?->valid_from,
-                'validUntil' => $user->activePayment()?->valid_until,
-                'paymentReference' => $user->activePayment()?->payment_reference,
-            ]);
+        return view('rekab.authenticated', [
+            'isPaid' => $payment !== null,
+            'passengerName' => $user->name,
+            'serviceName' => $payment?->service_name,
+            'validFrom' => $payment?->valid_from,
+            'validUntil' => $payment?->valid_until,
+            'paymentReference' => $payment?->payment_reference,
+        ]);
     }
 }
