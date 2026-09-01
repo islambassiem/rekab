@@ -15,7 +15,7 @@ class GoogleController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function googleCallBack(): View
+    public function googleCallBack(): RedirectResponse
     {
         /** @var \Laravel\Socialite\Two\User $googleUser */
         $googleUser = Socialite::driver('google')->user();
@@ -24,9 +24,18 @@ class GoogleController extends Controller
         $user = User::query()->where('email', $googleUser->email)->first();
 
         if (! $user) {
-            return view('rekab.login')->with('error', 'Please use your official email not your personal email');
+            return redirect()->route('login')->with('error', 'Please use your official email not your personal email');
         }
         Auth::login($user);
+        $payment = $user->activePayment();
+
+        return redirect()->route('authenticated');
+    }
+
+    public function authenticated(): View
+    {
+        /** @var User $user */
+        $user = Auth::user();
         $payment = $user->activePayment();
 
         return view('rekab.authenticated', [

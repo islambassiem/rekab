@@ -15,3 +15,5 @@ require __DIR__.'/settings.php';
 
 Route::get('/auth/google', [GoogleController::class, 'googlePage'])->name('google');
 Route::get('/auth/google/callback', [GoogleController::class, 'googleCallBack'])->name('google-callback');
+
+Route::get('/authenticated', [GoogleController::class, 'authenticated'])->name('authenticated');
