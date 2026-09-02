@@ -10,7 +10,8 @@ Route::view('/', 'welcome')->name('home');
 Route::redirect('/', '/login');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::redirect('dashboard', 'authenticated')->name('dashboard');
+    Route::get('/authenticated', [GoogleController::class, 'authenticated'])->name('authenticated');
 });
 
 require __DIR__.'/settings.php';

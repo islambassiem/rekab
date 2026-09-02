@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
 use LaravelQRCode\Facades\QRCode;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class GoogleController extends Controller
@@ -69,12 +70,16 @@ class GoogleController extends Controller
         ];
 
         if ($payment) {
-            $path = public_path()."/{$payment->payment_reference}.png";
             $filename = "{$payment->payment_reference}.png";
-            QRCode::text(route('verify', ['uuid' => $payment->payment_reference]))
+            $path = storage_path("app/public/{$filename}");
+
+            QRCode::text(route('verify', [
+                'uuid' => $payment->payment_reference
+            ]))
                 ->setOutfile($path)
                 ->png();
-            $data['filename'] = $filename;
+
+            $data['filename'] = Storage::url($filename);
         }
 
         return view('rekab.authenticated', $data);
