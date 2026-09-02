@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Laravel\Socialite\Facades\Socialite;
+use LaravelQRCode\Facades\QRCode;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class GoogleController extends Controller
@@ -29,7 +30,27 @@ class GoogleController extends Controller
         Auth::login($user);
         $payment = $user->activePayment();
 
-        return redirect()->route('authenticated');
+        if (! $payment) {
+            return redirect()->route('login')->with(
+                'error',
+                'You do not have an active payment. Please contact the finance department to activate your payment.'
+            );
+        }
+
+        $path = public_path()."/{$payment->payment_reference}.png";
+        $filename = "{$payment->payment_reference}.png";
+        QRCode::text(route('verify', ['uuid' => $payment->payment_reference]))
+            ->setOutfile($path)
+            ->png();
+
+        return redirect()->route('authenticated', [
+            'passengerName' => $user->name,
+            'serviceName' => $payment->service_name,
+            'validFrom' => $payment->valid_from,
+            'validUntil' => $payment->valid_until,
+            'paymentReference' => $payment->payment_reference,
+            'filename' => $filename,
+        ]);
     }
 
     public function authenticated(): View
@@ -38,13 +59,24 @@ class GoogleController extends Controller
         $user = Auth::user();
         $payment = $user->activePayment();
 
-        return view('rekab.authenticated', [
+        $data = [
             'isPaid' => $payment !== null,
             'passengerName' => $user->name,
             'serviceName' => $payment?->service_name,
             'validFrom' => $payment?->valid_from,
             'validUntil' => $payment?->valid_until,
             'paymentReference' => $payment?->payment_reference,
-        ]);
+        ];
+
+        if ($payment) {
+            $path = public_path()."/{$payment->payment_reference}.png";
+            $filename = "{$payment->payment_reference}.png";
+            QRCode::text(route('verify', ['uuid' => $payment->payment_reference]))
+                ->setOutfile($path)
+                ->png();
+            $data['filename'] = $filename;
+        }
+
+        return view('rekab.authenticated', $data);
     }
 }

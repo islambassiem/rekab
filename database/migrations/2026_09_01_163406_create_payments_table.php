@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->date('valid_from');
             $table->date('valid_until');
-            $table->string('service_name')->default('City Bus Monthly Pass');
+            $table->string('service_name')->default('College Bus Monthly Pass');
             $table->string('payment_reference');
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();
